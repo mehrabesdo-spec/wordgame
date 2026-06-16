@@ -364,7 +364,7 @@ function answerQuestion(isCorrect, btn, container, correctMeaning) {
     fb.innerHTML = '✓ Correct!' + (streak >= 5 ? ' 🔥' + streak + ' streak!' : '');
   } else {
     fb.className = 'feedback wrong show';
-    fb.innerHTML = '✗ Incorrect';
+    fb.innerHTML = '✗ Incorrect<br><span style="font-size:0.85rem;color:#fd79a8">tui ki vodo naki re 🙈</span>';
     const div = document.createElement('div');
     div.className = 'correct-answer';
     div.textContent = 'Answer: ' + correctMeaning;
