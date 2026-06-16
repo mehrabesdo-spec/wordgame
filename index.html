@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#6C5CE7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>WordMaster - GRE Vocabulary</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f23; color: #fff; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; user-select: none; }
+
+.screen { display: none; flex-direction: column; min-height: 100vh; padding: 16px; }
+.screen.active { display: flex; }
+
+/* Home */
+.home { align-items: center; justify-content: center; text-align: center; gap: 12px; }
+.home h1 { font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, #6C5CE7, #a29bfe, #fd79a8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.home .subtitle { color: #b2bec3; font-size: 0.95rem; margin-bottom: 8px; }
+.home .total-badge { background: rgba(108,92,231,0.2); color: #a29bfe; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; margin-bottom: 20px; }
+.mode-btn { width: 100%; max-width: 320px; padding: 18px; border: none; border-radius: 16px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; color: #fff; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.mode-btn:active { transform: scale(0.96); }
+.mode-btn.quiz { background: linear-gradient(135deg, #6C5CE7, #a29bfe); }
+.mode-btn.flash { background: linear-gradient(135deg, #fd79a8, #e84393); }
+.mode-btn.stats { background: linear-gradient(135deg, #00b894, #00cec9); }
+.mode-btn .icon { font-size: 1.4rem; }
+
+/* Top bar */
+.top-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 16px; }
+.top-bar .back { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 12px; font-size: 1.3rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.top-bar .back:active { background: rgba(255,255,255,0.2); }
+.top-bar .score { font-weight: 700; font-size: 1rem; }
+.top-bar .score span { color: #a29bfe; }
+.top-bar .streak { color: #fd79a8; font-weight: 600; font-size: 0.9rem; }
+
+/* Quiz */
+.quiz-area { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 24px; padding: 0 4px; }
+.quiz-word { text-align: center; }
+.quiz-word .label { color: #b2bec3; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+.quiz-word .word { font-size: 2.2rem; font-weight: 800; letter-spacing: 1px; }
+.quiz-word .pos { color: #a29bfe; font-size: 0.9rem; margin-top: 4px; display: none; }
+.options { display: flex; flex-direction: column; gap: 10px; }
+.option { width: 100%; padding: 16px 20px; border: 2px solid rgba(255,255,255,0.1); border-radius: 14px; background: rgba(255,255,255,0.05); color: #dfe6e9; font-size: 1rem; cursor: pointer; transition: all 0.2s; text-align: left; line-height: 1.4; }
+.option:active { transform: scale(0.98); }
+.option.correct { border-color: #00b894; background: rgba(0,184,148,0.15); color: #00b894; }
+.option.wrong { border-color: #d63031; background: rgba(214,48,49,0.15); color: #d63031; }
+.option.disabled { pointer-events: none; }
+.option.show-correct { border-color: #00b894; background: rgba(0,184,148,0.1); }
+
+.feedback { text-align: center; padding: 12px; border-radius: 12px; font-weight: 600; font-size: 1.1rem; display: none; margin-top: 4px; }
+.feedback.show { display: block; }
+.feedback.correct { background: rgba(0,184,148,0.15); color: #00b894; }
+.feedback.wrong { background: rgba(214,48,49,0.15); color: #d63031; }
+.feedback .correct-answer { color: #b2bec3; font-weight: 400; font-size: 0.9rem; margin-top: 4px; }
+
+.next-btn { width: 100%; padding: 16px; border: none; border-radius: 14px; background: linear-gradient(135deg, #6C5CE7, #a29bfe); color: #fff; font-size: 1.1rem; font-weight: 700; cursor: pointer; display: none; margin-top: 8px; transition: transform 0.15s; }
+.next-btn:active { transform: scale(0.96); }
+.next-btn.show { display: block; }
+
+.progress-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 16px; overflow: hidden; }
+.progress-bar .fill { height: 100%; background: linear-gradient(90deg, #6C5CE7, #a29bfe); border-radius: 2px; transition: width 0.3s; width: 0%; }
+
+/* Flashcard */
+.flash-area { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; perspective: 1000px; }
+.flash-card { width: 100%; max-width: 400px; height: 300px; position: relative; cursor: pointer; transform-style: preserve-3d; transition: transform 0.5s; }
+.flash-card.flipped { transform: rotateY(180deg); }
+.flash-card .face { position: absolute; inset: 0; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; backface-visibility: hidden; }
+.flash-card .front { background: linear-gradient(145deg, rgba(108,92,231,0.3), rgba(108,92,231,0.1)); border: 2px solid rgba(108,92,231,0.3); }
+.flash-card .front .word { font-size: 2.4rem; font-weight: 800; }
+.flash-card .front .tap-hint { color: #b2bec3; font-size: 0.8rem; margin-top: 20px; }
+.flash-card .back { background: linear-gradient(145deg, rgba(0,184,148,0.3), rgba(0,184,148,0.1)); border: 2px solid rgba(0,184,148,0.3); transform: rotateY(180deg); }
+.flash-card .back .meaning { font-size: 1.2rem; line-height: 1.6; text-align: center; color: #dfe6e9; }
+
+.flash-controls { display: flex; gap: 16px; width: 100%; max-width: 400px; }
+.flash-controls button { flex: 1; padding: 16px; border: none; border-radius: 14px; font-size: 1.2rem; font-weight: 700; cursor: pointer; transition: transform 0.15s; color: #fff; }
+.flash-controls button:active { transform: scale(0.94); }
+.flash-controls .prev { background: rgba(255,255,255,0.1); }
+.flash-controls .know { background: linear-gradient(135deg, #00b894, #00cec9); }
+.flash-controls .dont-know { background: linear-gradient(135deg, #d63031, #e17055); }
+.flash-controls .next { background: rgba(255,255,255,0.1); }
+.flash-progress { color: #b2bec3; font-size: 0.85rem; text-align: center; }
+
+/* Stats */
+.stats-area { flex: 1; padding: 16px 0; }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.stat-card { background: rgba(255,255,255,0.05); border-radius: 14px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.08); }
+.stat-card .num { font-size: 1.8rem; font-weight: 800; }
+.stat-card .num.green { color: #00b894; }
+.stat-card .num.pink { color: #fd79a8; }
+.stat-card .num.purple { color: #a29bfe; }
+.stat-card .num.red { color: #d63031; }
+.stat-card .label { color: #b2bec3; font-size: 0.8rem; margin-top: 4px; }
+.stats-list { max-height: 50vh; overflow-y: auto; }
+.stats-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 6px; }
+.stats-item .w { font-weight: 600; }
+.stats-item .s { font-size: 0.85rem; }
+.stats-item .s.high { color: #00b894; }
+.stats-item .s.med { color: #fdcb6e; }
+.stats-item .s.low { color: #d63031; }
+.stats-item .s.new { color: #b2bec3; }
+
+/* Animations */
+@keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+.pop-in { animation: popIn 0.3s ease; }
+.shake { animation: shake 0.3s ease; }
+
+/* Confetti */
+.confetti-container { position: fixed; inset: 0; pointer-events: none; z-index: 100; overflow: hidden; }
+.confetti { position: absolute; width: 10px; height: 10px; border-radius: 2px; animation: confettiFall linear forwards; }
+@keyframes confettiFall { 0% { transform: translateY(-10px) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+
+/* Reset */
+.reset-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: #b2bec3; padding: 10px 20px; border-radius: 10px; font-size: 0.85rem; cursor: pointer; margin-top: 16px; }
+
+/* Empty state */
+.empty-state { text-align: center; color: #b2bec3; padding: 40px; }
+
+@media (min-width: 500px) {
+  body { max-width: 480px; margin: 0 auto; }
+  .quiz-word .word { font-size: 2.6rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="homeScreen" class="screen home active">
+  <h1>WordMaster</h1>
+  <p class="subtitle">Barron's GRE High-Frequency Words</p>
+  <div class="total-badge" id="totalBadge">332 words</div>
+  <button class="mode-btn quiz" onclick="startQuiz()"><span class="icon">🎯</span> Quiz Mode</button>
+  <button class="mode-btn flash" onclick="startFlash()"><span class="icon">🃏</span> Flashcards</button>
+  <button class="mode-btn stats" onclick="showStats()"><span class="icon">📊</span> Progress</button>
+  <button class="mode-btn" id="installBtn" style="background:linear-gradient(135deg,#2d3436,#636e72);display:none" onclick="installApp()"><span class="icon">📲</span> Install App</button>
+  <p style="color:#636e72;font-size:0.75rem;margin-top:16px;max-width:320px">💡 For install option, serve files via HTTP (not file://). Or use a mini web server app from Play Store.</p>
+</div>
+
+<!-- QUIZ -->
+<div id="quizScreen" class="screen">
+  <div class="top-bar">
+    <button class="back" onclick="goHome()">‹</button>
+    <div class="score">Score: <span id="scoreNum">0</span></div>
+    <div class="streak" id="streakDisplay">🔥 <span id="streakNum">0</span></div>
+  </div>
+  <div class="quiz-area">
+    <div class="quiz-word pop-in" id="quizWordArea">
+      <div class="label">What does this word mean?</div>
+      <div class="word" id="quizWord"></div>
+    </div>
+    <div class="options" id="quizOptions"></div>
+    <div class="feedback" id="quizFeedback"></div>
+    <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Next →</button>
+    <div class="progress-bar"><div class="fill" id="progressFill"></div></div>
+  </div>
+</div>
+
+<!-- FLASHCARD -->
+<div id="flashScreen" class="screen">
+  <div class="top-bar">
+    <button class="back" onclick="goHome()">‹</button>
+    <div class="score">Known: <span id="knownNum">0</span></div>
+    <div class="streak" id="flashProgress">0 / 0</div>
+  </div>
+  <div class="flash-area">
+    <div class="flash-card" id="flashCard" onclick="flipCard()">
+      <div class="face front">
+        <div class="word" id="flashWord"></div>
+        <div class="tap-hint">⟳ Tap to reveal</div>
+      </div>
+      <div class="face back">
+        <div class="meaning" id="flashMeaning"></div>
+      </div>
+    </div>
+    <div class="flash-controls">
+      <button class="dont-know" onclick="flashDontKnow()">✗</button>
+      <button class="know" onclick="flashKnow()">✓</button>
+    </div>
+    <div class="flash-progress" id="flashProgressText">Card 1 of 332</div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div id="statsScreen" class="screen">
+  <div class="top-bar">
+    <button class="back" onclick="goHome()">‹</button>
+    <div class="score">📊 Progress</div>
+    <div></div>
+  </div>
+  <div class="stats-area">
+    <div class="stats-grid" id="statsGrid"></div>
+    <div class="stats-list" id="statsList"></div>
+    <button class="reset-btn" onclick="resetProgress()">Reset Progress</button>
+  </div>
+</div>
+
+<script src="words.js"></script>
+<script>
+let installPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  installPrompt = e;
+  document.getElementById('installBtn').style.display = 'flex';
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBtn').style.display = 'none';
+  installPrompt = null;
+});
+function installApp() {
+  if (!installPrompt) {
+    alert('To install, serve this folder with a web server.\n\nOn PC: open terminal in this folder and run:\n  npx serve\n\nThen open the URL shown in your phone browser and tap Install.');
+    return;
+  }
+  installPrompt.prompt();
+  installPrompt.userChoice.then(() => { installPrompt = null; });
+}
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js');
+}
+</script>
+<script>
+// ============ STATE ============
+let progress = JSON.parse(localStorage.getItem('wordmaster_progress') || '{}');
+let quizQueue = [];
+let quizIndex = 0;
+let quizCorrect = 0;
+let quizTotal = 0;
+let streak = 0;
+let flashQueue = [];
+let flashIndex = 0;
+let flashKnown = 0;
+
+const TOTAL = WORDS.length;
+
+function saveProgress() {
+  localStorage.setItem('wordmaster_progress', JSON.stringify(progress));
+}
+
+function getWordStats(word) {
+  const p = progress[word];
+  if (!p) return { correct: 0, wrong: 0, seen: 0, last: null };
+  return p;
+}
+
+function recordAnswer(word, correct) {
+  if (!progress[word]) progress[word] = { correct: 0, wrong: 0, seen: 0, last: null };
+  if (correct) progress[word].correct++;
+  else progress[word].wrong++;
+  progress[word].seen++;
+  progress[word].last = Date.now();
+  saveProgress();
+}
+
+// ============ HOME ============
+document.getElementById('totalBadge').textContent = TOTAL + ' words';
+
+function goHome() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('homeScreen').classList.add('active');
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.className = 'next-btn';
+  nextBtn.textContent = 'Next →';
+  nextBtn.onclick = nextQuestion;
+  const fc = document.querySelector('.flash-controls');
+  fc.style.display = 'flex';
+  fc.innerHTML = '<button class="dont-know" onclick="flashDontKnow()">✗</button><button class="know" onclick="flashKnow()">✓</button>';
+}
+
+// ============ QUIZ ============
+function startQuiz() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('quizScreen').classList.add('active');
+
+  // Build queue: all words shuffled, with harder words appearing more
+  const all = WORDS.map((w, i) => ({ ...w, idx: i }));
+  // Weight: words with more wrong answers appear more
+  all.sort((a, b) => {
+    const sa = getWordStats(a.word);
+    const sb = getWordStats(b.word);
+    const weightA = sa.wrong * 3 - sa.correct;
+    const weightB = sb.wrong * 3 - sb.correct;
+    return weightB - weightA; // higher weight = more wrong = appears earlier
+  });
+  // Shuffle within weight tiers
+  for (let i = 0; i < all.length; i++) {
+    const j = i + Math.floor(Math.random() * Math.min(10, all.length - i));
+    [all[i], all[j]] = [all[j], all[i]];
+  }
+  quizQueue = all;
+  quizIndex = 0;
+  quizCorrect = 0;
+  quizTotal = 0;
+  streak = 0;
+  updateQuizScore();
+  showQuestion();
+}
+
+function showQuestion() {
+  if (quizIndex >= quizQueue.length) {
+    showQuizEnd();
+    return;
+  }
+
+  const item = quizQueue[quizIndex];
+  document.getElementById('quizWord').textContent = item.word;
+  document.getElementById('quizWordArea').className = 'quiz-word pop-in';
+
+  // Build 4 options: 1 correct + 3 random
+  const correct = item.meaning;
+  const wrongPool = WORDS.filter(w => w.word !== item.word);
+  shuffleArray(wrongPool);
+  const wrong = wrongPool.slice(0, 3).map(w => w.meaning);
+  const options = [correct, ...wrong];
+  shuffleArray(options);
+
+  const container = document.getElementById('quizOptions');
+  container.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.onclick = () => answerQuestion(opt === correct, btn, container, correct);
+    container.appendChild(btn);
+  });
+
+  document.getElementById('quizFeedback').className = 'feedback';
+  document.getElementById('quizFeedback').textContent = '';
+  document.getElementById('nextBtn').className = 'next-btn';
+
+  // Update progress bar
+  document.getElementById('progressFill').style.width = ((quizIndex / quizQueue.length) * 100) + '%';
+
+  // Re-trigger animation
+  setTimeout(() => { document.getElementById('quizWordArea').className = 'quiz-word'; }, 50);
+}
+
+function answerQuestion(isCorrect, btn, container, correctMeaning) {
+  const allOptions = container.querySelectorAll('.option');
+  allOptions.forEach(o => o.classList.add('disabled'));
+  allOptions.forEach(o => { if (o.textContent === correctMeaning) o.classList.add('show-correct'); });
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    quizCorrect++;
+    streak++;
+    if (streak > 0 && streak % 5 === 0) spawnConfetti();
+  } else {
+    btn.classList.add('wrong');
+    streak = 0;
+    document.getElementById('quizWordArea').classList.add('shake');
+  }
+
+  quizTotal++;
+  const word = quizQueue[quizIndex].word;
+  recordAnswer(word, isCorrect);
+  updateQuizScore();
+
+  const fb = document.getElementById('quizFeedback');
+  if (isCorrect) {
+    fb.className = 'feedback correct show';
+    fb.innerHTML = '✓ Correct!' + (streak >= 5 ? ' 🔥' + streak + ' streak!' : '');
+  } else {
+    fb.className = 'feedback wrong show';
+    fb.innerHTML = '✗ Incorrect';
+    const div = document.createElement('div');
+    div.className = 'correct-answer';
+    div.textContent = 'Answer: ' + correctMeaning;
+    fb.appendChild(div);
+  }
+
+  document.getElementById('nextBtn').className = 'next-btn show';
+}
+
+function nextQuestion() {
+  quizIndex++;
+  showQuestion();
+}
+
+function showQuizEnd() {
+  const container = document.getElementById('quizOptions');
+  container.innerHTML = '';
+  document.getElementById('quizWord').textContent = '🎉 Complete!';
+  document.getElementById('quizWordArea').querySelector('.label').textContent = '';
+  document.getElementById('quizFeedback').className = 'feedback correct show';
+  const pct = quizTotal > 0 ? Math.round(quizCorrect / quizTotal * 100) : 0;
+  document.getElementById('quizFeedback').innerHTML = `You got <strong>${quizCorrect}/${quizTotal}</strong> correct (${pct}%)`;
+  document.getElementById('nextBtn').className = 'next-btn show';
+  document.getElementById('nextBtn').textContent = '🔄 Try Again';
+  document.getElementById('nextBtn').onclick = startQuiz;
+  document.getElementById('progressFill').style.width = '100%';
+  spawnConfetti();
+}
+
+function updateQuizScore() {
+  document.getElementById('scoreNum').textContent = `${quizCorrect}/${quizTotal}`;
+  document.getElementById('streakNum').textContent = streak;
+}
+
+// ============ FLASHCARD ============
+function startFlash() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('flashScreen').classList.add('active');
+
+  flashQueue = [...WORDS];
+  // Sort: words with most wrong answers first, then unseen
+  flashQueue.sort((a, b) => {
+    const sa = getWordStats(a.word);
+    const sb = getWordStats(b.word);
+    const scoreA = sa.wrong * 5 - sa.correct * 2 + (sa.seen === 0 ? 10 : 0);
+    const scoreB = sb.wrong * 5 - sb.correct * 2 + (sb.seen === 0 ? 10 : 0);
+    return scoreB - scoreA;
+  });
+  flashIndex = 0;
+  flashKnown = 0;
+  showFlashCard();
+}
+
+function restartFlash() {
+  startFlash();
+}
+
+function showFlashCard() {
+  if (flashIndex >= flashQueue.length) {
+    document.getElementById('flashWord').textContent = '🎉 Done!';
+    document.getElementById('flashMeaning').textContent = 'You reviewed all words!';
+    document.getElementById('flashProgressText').textContent = 'Complete!';
+    document.getElementById('flashCard').classList.remove('flipped');
+    document.querySelector('.flash-controls').innerHTML = '<button style="flex:1;padding:16px;border:none;border-radius:14px;font-size:1.1rem;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#6C5CE7,#a29bfe);color:#fff" onclick="restartFlash()">🔄 Start Over</button>';
+    spawnConfetti();
+    return;
+  }
+  const item = flashQueue[flashIndex];
+  document.getElementById('flashWord').textContent = item.word;
+  document.getElementById('flashMeaning').textContent = item.meaning;
+  document.getElementById('flashCard').classList.remove('flipped');
+  document.getElementById('flashProgressText').textContent = `Card ${flashIndex + 1} of ${flashQueue.length}`;
+  document.getElementById('knownNum').textContent = flashKnown;
+  document.querySelector('.flash-controls').style.display = 'flex';
+}
+
+function flipCard() {
+  document.getElementById('flashCard').classList.toggle('flipped');
+}
+
+function flashKnow() {
+  const word = flashQueue[flashIndex].word;
+  recordAnswer(word, true);
+  flashKnown++;
+  flashIndex++;
+  showFlashCard();
+}
+
+function flashDontKnow() {
+  const word = flashQueue[flashIndex].word;
+  recordAnswer(word, false);
+  flashIndex++;
+  showFlashCard();
+}
+
+// ============ STATS ============
+function showStats() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('statsScreen').classList.add('active');
+
+  let totalCorrect = 0, totalWrong = 0, totalSeen = 0, learned = 0;
+  const list = [];
+
+  WORDS.forEach(w => {
+    const s = getWordStats(w.word);
+    if (s.seen > 0) {
+      totalSeen++;
+      totalCorrect += s.correct;
+      totalWrong += s.wrong;
+      if (s.correct >= 2 && s.correct >= s.wrong * 2) learned++;
+      list.push({ word: w.word, correct: s.correct, wrong: s.wrong, seen: s.seen });
+    }
+  });
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="num purple">${totalSeen}</div><div class="label">Words Seen</div></div>
+    <div class="stat-card"><div class="num green">${learned}</div><div class="label">Learned</div></div>
+    <div class="stat-card"><div class="num pink">${totalCorrect}</div><div class="label">Correct</div></div>
+    <div class="stat-card"><div class="num red">${totalWrong}</div><div class="label">Wrong</div></div>
+  `;
+
+  const container = document.getElementById('statsList');
+  if (list.length === 0) {
+    container.innerHTML = '<div class="empty-state">No words studied yet.<br>Start a quiz or flashcards!</div>';
+    return;
+  }
+
+  list.sort((a, b) => (b.wrong + b.correct) - (a.wrong + a.correct));
+  container.innerHTML = list.map(item => {
+    const ratio = item.correct / Math.max(1, item.correct + item.wrong);
+    const cls = ratio >= 0.8 ? 'high' : ratio >= 0.5 ? 'med' : 'low';
+    const label = ratio >= 0.8 ? '✓ Learned' : ratio >= 0.5 ? '⟳ Learning' : '✗ Struggling';
+    return `<div class="stats-item"><span class="w">${item.word}</span><span class="s ${cls}">${label} (${item.correct}/${item.correct + item.wrong})</span></div>`;
+  }).join('');
+}
+
+function resetProgress() {
+  if (confirm('Reset all progress?')) {
+    progress = {};
+    saveProgress();
+    showStats();
+  }
+}
+
+// ============ HELPERS ============
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function spawnConfetti() {
+  const existing = document.querySelector('.confetti-container');
+  if (existing) existing.remove();
+  const container = document.createElement('div');
+  container.className = 'confetti-container';
+  document.body.appendChild(container);
+  const colors = ['#6C5CE7', '#a29bfe', '#fd79a8', '#00b894', '#fdcb6e', '#e17055', '#00cec9'];
+  for (let i = 0; i < 40; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    el.style.left = Math.random() * 100 + '%';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.width = (Math.random() * 8 + 4) + 'px';
+    el.style.height = (Math.random() * 8 + 4) + 'px';
+    el.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+    el.style.animationDelay = Math.random() * 0.5 + 's';
+    container.appendChild(el);
+  }
+  setTimeout(() => { if (container.parentNode) container.remove(); }, 3000);
+}
+</script>
+</body>
+</html>

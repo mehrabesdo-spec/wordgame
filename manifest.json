@@ -1,0 +1,15 @@
+{
+  "name": "WordMaster - GRE Vocabulary",
+  "short_name": "WordMaster",
+  "description": "Learn Barron's GRE High-Frequency words with quizzes and flashcards",
+  "start_url": "index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f0f23",
+  "theme_color": "#6C5CE7",
+  "scope": ".",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "icon.svg", "sizes": "512x512", "type": "image/svg+xml" }
+  ]
+}
