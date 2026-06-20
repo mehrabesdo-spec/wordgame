@@ -2,6 +2,7 @@ const CACHE_NAME = 'wordmaster-v1';
 const ASSETS = [
   'index.html',
   'words.js',
+  'synonyms.js',
   'manifest.json',
   'icon.svg'
 ];
