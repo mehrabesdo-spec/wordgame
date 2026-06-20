@@ -291,8 +291,8 @@ function recordAnswer(word, correct) {
 }
 
 // ============ HOME ============
-const bankTotal = typeof BANKVOCAB !== 'undefined' ? BANKVOCAB.length : 0;
-document.getElementById('totalBadge').textContent = `${WORDS.length} GRE + ${bankTotal} Bank Job`;
+const bankTotalCount = typeof BANKVOCAB !== 'undefined' ? BANKVOCAB.length : 0;
+document.getElementById('totalBadge').textContent = `${WORDS.length} GRE + ${bankTotalCount} Bank Job`;
 
 function goHome() {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -683,7 +683,7 @@ let bankMode = 'study';
 let bankQueue = [];
 let bankIndex = 0;
 let bankCorrect = 0;
-let bankTotal = 0;
+let bankQuizTotal = 0;
 
 function startBankVocab() {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -701,7 +701,7 @@ function bankStart() {
   shuffleArray(bankQueue);
   bankIndex = 0;
   bankCorrect = 0;
-  bankTotal = 0;
+  bankQuizTotal = 0;
   document.getElementById('bankModeTitle').textContent = bankMode === 'study' ? '📖 Study Mode' : '🎯 Quiz Mode';
   bankShowCard();
 }
@@ -710,12 +710,12 @@ function bankShowCard() {
   if (bankIndex >= bankQueue.length) {
     const area = document.getElementById('bankArea');
     if (bankMode === 'quiz') {
-      const pct = bankTotal > 0 ? Math.round(bankCorrect / bankTotal * 100) : 0;
+      const pct = bankQuizTotal > 0 ? Math.round(bankCorrect / bankQuizTotal * 100) : 0;
       area.innerHTML = `
         <div style="text-align:center;padding:20px">
           <div style="font-size:3rem;margin-bottom:12px">🎉</div>
           <div style="font-size:1.5rem;font-weight:800">Complete!</div>
-          <div style="color:#b2bec3;margin:12px 0">You got <strong>${bankCorrect}/${bankTotal}</strong> correct (${pct}%)</div>
+          <div style="color:#b2bec3;margin:12px 0">You got <strong>${bankCorrect}/${bankQuizTotal}</strong> correct (${pct}%)</div>
           <button onclick="bankStart()" style="padding:14px 32px;border:none;border-radius:12px;background:linear-gradient(135deg,#0984e3,#74b9ff);color:#fff;font-size:1rem;font-weight:700;cursor:pointer">🔄 Try Again</button>
         </div>`;
       spawnConfetti();
@@ -794,7 +794,7 @@ function bankAnswer(btn, selected, correct) {
   });
   const isCorrect = selected === correct;
   btn.classList.add(isCorrect ? 'correct' : 'wrong');
-  bankTotal++;
+  bankQuizTotal++;
   if (isCorrect) bankCorrect++;
   const fb = document.getElementById('bankFeedback');
   fb.className = `feedback ${isCorrect ? 'correct' : 'wrong'} show`;
