@@ -3,6 +3,7 @@ const ASSETS = [
   'index.html',
   'words.js',
   'synonyms.js',
+  'bank_vocab.js',
   'manifest.json',
   'icon.svg'
 ];
